@@ -272,22 +272,62 @@ def render_prediction_panel():
         predict_clicked = st.button("📈 Predict Market Impact")
 
     # If auto-fill requested, try to call Gemini
+        # -----------------------------------
+    # Optional popover to capture GOOGLE_API_KEY
+    # -----------------------------------
+    if "show_key_popover" not in st.session_state:
+        st.session_state["show_key_popover"] = False
+
+    if st.session_state["show_key_popover"]:
+        with st.popover("Click to enter your GOOGLE_API_KEY"):
+            st.markdown(
+                "This key is used to call **Gemini** for auto-filling scores. "
+                "It is stored only in this Streamlit session."
+            )
+            user_api_key = st.text_input(
+                "GOOGLE_API_KEY",
+                type="password",
+                key="google_api_key_input",
+            )
+            if user_api_key:
+                # Save for this session and make llm_score_headline pick it up
+                os.environ["GOOGLE_API_KEY"] = user_api_key
+                st.session_state["GOOGLE_API_KEY"] = user_api_key
+                st.success(
+                    "API key saved. Click **Auto-fill scores from headline** again."
+                )
+
+        # If auto-fill requested, try to call Gemini
     if auto_clicked:
         if not headline.strip():
             st.warning("Please enter a headline before auto-filling scores.")
         else:
-            try:
-                scores_auto = llm_score_headline(
-                    ticker=ticker,
-                    event_date=event_date,
-                    headline=headline,
+            # Check whether we already have an API key
+            api_key = os.getenv("GOOGLE_API_KEY") or st.session_state.get("GOOGLE_API_KEY", "")
+
+            if not api_key:
+                # Turn on the popover and ask the user to enter the key
+                st.session_state["show_key_popover"] = True
+                st.warning(
+                    "To use auto-fill, please enter your **GOOGLE_API_KEY** "
+                    "using the popover above, then click the button again."
                 )
-                # Update session_state so sliders pick up new defaults
-                for key, value in scores_auto.items():
-                    st.session_state[key] = float(value)
-                st.success("Scores auto-filled from headline. You can tweak them below.")
-            except Exception as e:
-                st.error(f"Auto-scoring failed: {e}")
+            else:
+                try:
+                    scores_auto = llm_score_headline(
+                        ticker=ticker,
+                        event_date=event_date,
+                        headline=headline,
+                    )
+                    # Update session_state so sliders pick up new defaults
+                    for key, value in scores_auto.items():
+                        st.session_state[key] = float(value)
+                    st.success(
+                        "Scores auto-filled from headline. You can tweak them below."
+                    )
+                except Exception as e:
+                    st.error(f"Auto-scoring failed: {e}")
+
 
     # -----------------------------------
     # Sliders for P_* scores (manual + tweak auto-fill)
