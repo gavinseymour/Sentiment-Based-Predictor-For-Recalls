@@ -90,7 +90,12 @@ def render_price_preview(event_row: Union[pd.Series, pd.DataFrame]) -> None:
         st.warning(f"No price data found for {ticker} around {event_date.date()}.")
         return
 
-    # ---------------------------
+    # 
+        # Ensure yfinance output has simple column names (no MultiIndex)
+    if isinstance(price_df.columns, pd.MultiIndex):
+        # Keep only the first level: 'Date', 'Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume'
+        price_df.columns = price_df.columns.get_level_values(0)
+
     # Price chart with event marker
     # ---------------------------
     fig = px.line(
