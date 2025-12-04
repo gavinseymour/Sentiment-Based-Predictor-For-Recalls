@@ -15,6 +15,11 @@ import price_preview
 #  PAGE CONFIG
 # ================================================================
 st.set_page_config(page_title="Recall Event Explorer", layout="wide")
+# Presentation Link Button
+st.link_button(
+    "Open Project Presentation (JGB inc. II)",
+    "https://docs.google.com/presentation/d/1ahb9XehxBEEF8gR2B3ErbDXxPM2sUwFr5Kksp16oA_w/edit?usp=sharing"
+)
 
 
 # ================================================================
